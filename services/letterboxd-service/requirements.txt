@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+motor
+pymongo
+beautifulsoup4
+aiohttp
+lxml
+requests

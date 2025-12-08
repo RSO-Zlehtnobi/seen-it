@@ -1,0 +1,86 @@
+services:
+  # ---------------------------
+  # MongoDB for User Service
+  # ---------------------------
+  user-db:
+    image: mongo:6
+    container_name: user-db
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - user-data:/data/db
+
+  # ---------------------------
+  # User Service
+  # ---------------------------
+  user-service:
+    build: ./services/user-service
+    container_name: user-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - MONGO_URI=mongodb://user-db:27017/users
+    depends_on:
+      - user-db
+    restart: always
+
+  # ---------------------------
+  # MongoDB for Movie Service
+  # ---------------------------
+  movie-db:
+    image: mongo:6
+    container_name: movie-db
+    restart: always
+    ports:
+      - "27018:27017"
+    volumes:
+      - movie-data:/data/db
+
+  # ---------------------------
+  # Movie Service
+  # ---------------------------
+  movie-service:
+    build: ./services/movie-service
+    container_name: movie-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - MONGO_URI=mongodb://movie-db:27017/movies
+      - TMDB_API_KEY=${TMDB_API_KEY}
+    depends_on:
+      - movie-db
+
+  # ---------------------------
+  # MongoDB for Letterboxd Service
+  # ---------------------------
+  letterboxd-db:
+    image: mongo:6
+    container_name: letterboxd-db
+    restart: always
+    ports:
+      - "27019:27017"
+    volumes:
+      - letterboxd-data:/data/db
+
+  # ---------------------------
+  # Letterboxd Service
+  # ---------------------------
+  letterboxd-service:
+    build: ./services/letterboxd-service
+    container_name: letterboxd-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - MONGO_URI=mongodb://letterboxd-db:27017/letterboxd
+    depends_on:
+      - letterboxd-db
+    restart: unless-stopped
+
+volumes:
+  user-data:
+  movie-data:
+  letterboxd-data:
