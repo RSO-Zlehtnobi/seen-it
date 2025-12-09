@@ -13,17 +13,18 @@ variables:
 
 stages:
 - stage: Build
-  displayName: Build image
+  displayName: Build images
   jobs:
   - job: Build
-    displayName: Build
+    displayName: Build with Docker Compose
     pool:
       vmImage: ubuntu-latest
     steps:
-    - task: Docker@2
-      displayName: Build an image
+    - task: DockerCompose@0
+      displayName: Build all services
       inputs:
-        command: build
-        dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-        tags: |
+        containerregistrytype: 'Container Registry'
+        dockerComposeFile: '$(Build.SourcesDirectory)/docker-compose.yml'
+        action: BuildServices
+        additionalImageTags: |
           $(tag)
