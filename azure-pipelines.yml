@@ -1,7 +1,3 @@
-# Docker
-# Build a Docker image
-# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
-
 trigger:
 - main
 
@@ -10,7 +6,7 @@ resources:
 
 variables:
   tag: '$(Build.BuildId)'
-  TMDB_API_KEY: $(TMDB_API_KEY)
+  TMDB_API_KEY: $(TMDB_API_KEY)  # Make sure this is defined in Pipeline variables UI
 
 stages:
 - stage: Build
@@ -21,6 +17,12 @@ stages:
     pool:
       vmImage: ubuntu-latest
     steps:
+
+    # Make TMDB_API_KEY available to docker-compose
+    - script: |
+        echo "##vso[task.setvariable variable=TMDB_API_KEY]$(TMDB_API_KEY)"
+      displayName: "Export TMDB_API_KEY"
+
     - task: DockerCompose@0
       displayName: Build all services
       inputs:
@@ -30,5 +32,3 @@ stages:
         projectName: 'seenit'
         additionalImageTags: |
           $(Build.BuildId)
-
-
