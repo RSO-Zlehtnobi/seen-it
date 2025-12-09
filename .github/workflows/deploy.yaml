@@ -1,4 +1,4 @@
-name: CI/CD to GKE
+name: Deploy to GKE
 
 on:
   push:
@@ -6,43 +6,65 @@ on:
       - main
 
 env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REGION: ${{ secrets.GCP_REGION }}
-  REPO: ${{ secrets.GCP_ARTIFACT_REPO }}
-  CLUSTER: ${{ secrets.GKE_CLUSTER_NAME }}
+  PROJECT_ID: seenit-480720
+  PROJECT_NUMBER: 302049438858
+  REGION: europe-central2
+  REPOSITORY: my-repo
+  CLUSTER: my-cluster
+  DEPLOYMENT_NAME: seen-it
+  IMAGE_NAME: seen-it
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v4
 
+    # Authenticate to GCP via Workload Identity Federation (NO KEYS)
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        workload_identity_provider: "projects/302049438858/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+        service_account: "github-sa@seenit-480720.iam.gserviceaccount.com"
 
-    - name: Configure gcloud
+    - name: Set up gcloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Configure gcloud defaults
       run: |
         gcloud config set project $PROJECT_ID
         gcloud config set compute/region $REGION
+        gcloud components update --quiet
 
-    - name: Get GKE credentials
+    # Authenticate Docker to Artifact Registry
+    - name: Configure Docker for Artifact Registry
       run: |
-        gcloud container clusters get-credentials $CLUSTER --region $REGION
+        gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
 
+    # Build Docker image
     - name: Build Docker image
       run: |
-        IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/my-app:${{ github.sha }}"
+        IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:${{ github.sha }}"
         docker build -t $IMAGE .
         echo "IMAGE=$IMAGE" >> $GITHUB_ENV
 
+    # Push image to Artifact Registry
     - name: Push Docker image
       run: |
         docker push $IMAGE
 
-    - name: Deploy to Kubernetes
+    # Get GKE cluster credentials
+    - name: Get GKE credentials
       run: |
-        kubectl set image deployment/my-app my-app=$IMAGE
+        gcloud container clusters get-credentials $CLUSTER --region $REGION
+
+    # Apply updated image to Kubernetes deployment
+    - name: Deploy to GKE
+      run: |
+        kubectl set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$IMAGE
