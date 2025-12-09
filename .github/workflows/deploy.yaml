@@ -1,0 +1,48 @@
+name: CI/CD to GKE
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: ${{ secrets.GCP_REGION }}
+  REPO: ${{ secrets.GCP_ARTIFACT_REPO }}
+  CLUSTER: ${{ secrets.GKE_CLUSTER_NAME }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Configure gcloud
+      run: |
+        gcloud config set project $PROJECT_ID
+        gcloud config set compute/region $REGION
+
+    - name: Get GKE credentials
+      run: |
+        gcloud container clusters get-credentials $CLUSTER --region $REGION
+
+    - name: Build Docker image
+      run: |
+        IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/my-app:${{ github.sha }}"
+        docker build -t $IMAGE .
+        echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+    - name: Push Docker image
+      run: |
+        docker push $IMAGE
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl set image deployment/my-app my-app=$IMAGE
