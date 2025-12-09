@@ -26,5 +26,7 @@ stages:
         containerregistrytype: 'Container Registry'
         dockerComposeFile: '$(Build.SourcesDirectory)/docker-compose.yml'
         action: BuildServices
+        projectName: 'seenit'
         additionalImageTags: |
-          $(tag)
+          $(Build.BuildId)
+
