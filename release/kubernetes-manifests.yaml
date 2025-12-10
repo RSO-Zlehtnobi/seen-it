@@ -1,0 +1,365 @@
+# ----------------------------------------------------------
+# seen-it Kubernetes Manifests
+# Project: seenit-480720
+# Region:  europe-west3
+# ----------------------------------------------------------
+
+# [START seen_it_kubernetes_manifests]
+
+# ============================
+# USER DATABASE (MongoDB)
+# ============================
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-db
+  labels:
+    app: user-db
+spec:
+  type: ClusterIP
+  selector:
+    app: user-db
+  ports:
+    - name: mongo
+      port: 27017
+      targetPort: 27017
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-db
+  labels:
+    app: user-db
+spec:
+  selector:
+    matchLabels:
+      app: user-db
+  template:
+    metadata:
+      labels:
+        app: user-db
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:6
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: user-db-data
+              mountPath: /data/db
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
+      volumes:
+        - name: user-db-data
+          emptyDir: {}   # for dev – replace with PVC in prod
+
+# ============================
+# USER SERVICE
+# ============================
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: user-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+spec:
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      serviceAccountName: user-service
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: server
+          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/user-service:latest
+          ports:
+            - name: http
+              containerPort: 3001
+          env:
+            - name: PORT
+              value: "3001"
+            - name: MONGO_URI
+              value: "mongodb://user-db:27017/users"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+spec:
+  type: LoadBalancer   # public API
+  selector:
+    app: user-service
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3001
+
+# ============================
+# MOVIE DATABASE (MongoDB)
+# ============================
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: movie-db
+  labels:
+    app: movie-db
+spec:
+  type: ClusterIP
+  selector:
+    app: movie-db
+  ports:
+    - name: mongo
+      port: 27017
+      targetPort: 27017
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movie-db
+  labels:
+    app: movie-db
+spec:
+  selector:
+    matchLabels:
+      app: movie-db
+  template:
+    metadata:
+      labels:
+        app: movie-db
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:6
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: movie-db-data
+              mountPath: /data/db
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
+      volumes:
+        - name: movie-db-data
+          emptyDir: {}   # dev only – swap for PVC in prod
+
+# ============================
+# MOVIE SERVICE
+# ============================
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: movie-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movie-service
+  labels:
+    app: movie-service
+spec:
+  selector:
+    matchLabels:
+      app: movie-service
+  template:
+    metadata:
+      labels:
+        app: movie-service
+    spec:
+      serviceAccountName: movie-service
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: server
+          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/movie-service:latest
+          ports:
+            - name: http
+              containerPort: 3002
+          env:
+            - name: PORT
+              value: "3002"
+            - name: MONGO_URI
+              value: "mongodb://movie-db:27017/movies"
+            - name: TMDB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tmdb-api-key
+                  key: TMDB_API_KEY
+          resources:
+            requests:
+              cpu: 150m
+              memory: 256Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: movie-service
+  labels:
+    app: movie-service
+spec:
+  type: LoadBalancer   # public API
+  selector:
+    app: movie-service
+  ports:
+    - name: http
+      port: 3002
+      targetPort: 3002
+
+# ============================
+# LETTERBOXD DATABASE (MongoDB)
+# ============================
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: letterboxd-db
+  labels:
+    app: letterboxd-db
+spec:
+  type: ClusterIP
+  selector:
+    app: letterboxd-db
+  ports:
+    - name: mongo
+      port: 27017
+      targetPort: 27017
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: letterboxd-db
+  labels:
+    app: letterboxd-db
+spec:
+  selector:
+    matchLabels:
+      app: letterboxd-db
+  template:
+    metadata:
+      labels:
+        app: letterboxd-db
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:6
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: letterboxd-db-data
+              mountPath: /data/db
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
+      volumes:
+        - name: letterboxd-db-data
+          emptyDir: {}   # dev only – swap for PVC in prod
+
+# ============================
+# LETTERBOXD SERVICE
+# ============================
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: letterboxd-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: letterboxd-service
+  labels:
+    app: letterboxd-service
+spec:
+  selector:
+    matchLabels:
+      app: letterboxd-service
+  template:
+    metadata:
+      labels:
+        app: letterboxd-service
+    spec:
+      serviceAccountName: letterboxd-service
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: server
+          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/letterboxd-service:latest
+          ports:
+            - name: http
+              containerPort: 3003
+          env:
+            - name: PORT
+              value: "3003"
+            - name: MONGO_URI
+              value: "mongodb://letterboxd-db:27017/letterboxd"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: letterboxd-service
+  labels:
+    app: letterboxd-service
+spec:
+  type: LoadBalancer   # public API
+  selector:
+    app: letterboxd-service
+  ports:
+    - name: http
+      port: 3003
+      targetPort: 3003
+
+# [END seen_it_kubernetes_manifests]
