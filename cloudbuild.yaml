@@ -1,0 +1,41 @@
+steps:
+# -----------------------------
+# Install Docker Compose
+# -----------------------------
+- name: gcr.io/cloud-builders/docker
+  entrypoint: 'bash'
+  args:
+    - -c
+    - |
+      wget https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64 -O /usr/local/bin/docker-compose
+      chmod +x /usr/local/bin/docker-compose
+
+# -----------------------------
+# Build all services using docker-compose.yml in root
+# -----------------------------
+- name: gcr.io/cloud-builders/docker
+  id: Build all images
+  args:
+    [
+      "compose",
+      "-f",
+      "docker-compose.yml",
+      "build"
+    ]
+
+# -----------------------------
+# Push all images to Artifact Registry
+# (compose file must include image: <registry>/<repo>/<service>)
+# -----------------------------
+- name: gcr.io/cloud-builders/docker
+  id: Push all images
+  args:
+    [
+      "compose",
+      "-f",
+      "docker-compose.yml",
+      "push"
+    ]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
