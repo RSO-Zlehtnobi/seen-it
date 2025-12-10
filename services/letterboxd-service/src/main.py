@@ -7,4 +7,4 @@ app.include_router(letterboxd_router)
 
 @app.get("/")
 def root():
-    return {"message": "Letterboxd Service Running"}
+    return {"message": "Letterboxd Service Running YAYY!"}
