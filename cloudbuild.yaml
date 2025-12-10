@@ -44,3 +44,6 @@ steps:
     - apply
     - -f
     - kubernetes-manifests.yaml
+
+options:
+  logging: CLOUD_LOGGING_ONLY
