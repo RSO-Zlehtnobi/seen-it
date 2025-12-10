@@ -43,7 +43,7 @@ steps:
   args:
     - apply
     - -f
-    - kubernetes-manifests.yaml
+    - ./release/kubernetes-manifests.yaml
 
 options:
   logging: CLOUD_LOGGING_ONLY
