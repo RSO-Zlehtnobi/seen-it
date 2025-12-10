@@ -2,69 +2,23 @@ name: Deploy to GKE
 
 on:
   push:
-    branches:
-      - main
-
-env:
-  PROJECT_ID: seenit-480720
-  PROJECT_NUMBER: 302049438858
-  REGION: europe-central2
-  REPOSITORY: my-repo
-  CLUSTER: my-cluster
-  DEPLOYMENT_NAME: seen-it
-  IMAGE_NAME: seen-it
+    branches: ["main"]
 
 jobs:
-  deploy:
+  trigger-cloud-build:
     runs-on: ubuntu-latest
 
-    permissions:
-      id-token: write
-      contents: read
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    # Authenticate to GCP via Workload Identity Federation (NO KEYS)
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        workload_identity_provider: "projects/302049438858/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
-        service_account: "github-sa@seenit-480720.iam.gserviceaccount.com"
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    - name: Set up gcloud SDK
-      uses: google-github-actions/setup-gcloud@v2
-
-    - name: Configure gcloud defaults
-      run: |
-        gcloud config set project $PROJECT_ID
-        gcloud config set compute/region $REGION
-        gcloud components update --quiet
-
-    # Authenticate Docker to Artifact Registry
-    - name: Configure Docker for Artifact Registry
-      run: |
-        gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
-
-    # Build Docker image
-    - name: Build Docker image
-      run: |
-        IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:${{ github.sha }}"
-        docker build -t $IMAGE .
-        echo "IMAGE=$IMAGE" >> $GITHUB_ENV
-
-    # Push image to Artifact Registry
-    - name: Push Docker image
-      run: |
-        docker push $IMAGE
-
-    # Get GKE cluster credentials
-    - name: Get GKE credentials
-      run: |
-        gcloud container clusters get-credentials $CLUSTER --region $REGION
-
-    # Apply updated image to Kubernetes deployment
-    - name: Deploy to GKE
-      run: |
-        kubectl set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$IMAGE
+      - name: Trigger Cloud Build
+        uses: google-github-actions/cloud-build@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          config: cloudbuild.yaml

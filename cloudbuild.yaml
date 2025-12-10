@@ -1,41 +1,46 @@
 steps:
-# -----------------------------
-# Install Docker Compose
-# -----------------------------
+# Build user-service
 - name: gcr.io/cloud-builders/docker
-  entrypoint: 'bash'
-  args:
-    - -c
-    - |
-      wget https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64 -O /usr/local/bin/docker-compose
-      chmod +x /usr/local/bin/docker-compose
+  args: [
+    "build", "-t", "europe-west3-docker.pkg.dev/$PROJECT_ID/seen-it/user-service:latest",
+    "./services/user-service"
+  ]
 
-# -----------------------------
-# Build all services using docker-compose.yml in root
-# -----------------------------
 - name: gcr.io/cloud-builders/docker
-  id: Build all images
-  args:
-    [
-      "compose",
-      "-f",
-      "docker-compose.yml",
-      "build"
-    ]
+  args: [
+    "push", "europe-west3-docker.pkg.dev/$PROJECT_ID/seen-it/user-service:latest"
+  ]
 
-# -----------------------------
-# Push all images to Artifact Registry
-# (compose file must include image: <registry>/<repo>/<service>)
-# -----------------------------
+# Build movie-service
 - name: gcr.io/cloud-builders/docker
-  id: Push all images
-  args:
-    [
-      "compose",
-      "-f",
-      "docker-compose.yml",
-      "push"
-    ]
+  args: [
+    "build", "-t", "europe-west3-docker.pkg.dev/$PROJECT_ID/seen-it/movie-service:latest",
+    "./services/movie-service"
+  ]
 
-options:
-  logging: CLOUD_LOGGING_ONLY
+- name: gcr.io/cloud-builders/docker
+  args: [
+    "push", "europe-west3-docker.pkg.dev/$PROJECT_ID/seen-it/movie-service:latest"
+  ]
+
+# Build letterboxd-service
+- name: gcr.io/cloud-builders/docker
+  args: [
+    "build", "-t", "europe-west3-docker.pkg.dev/$PROJECT_ID/seen-it/letterboxd-service:latest",
+    "./services/letterboxd-service"
+  ]
+
+- name: gcr.io/cloud-builders/docker
+  args: [
+    "push", "europe-west3-docker.pkg.dev/$PROJECT_ID/seen-it/letterboxd-service:latest"
+  ]
+
+# Deploy to GKE
+- name: gcr.io/cloud-builders/kubectl
+  env:
+    - CLOUDSDK_COMPUTE_REGION=europe-west3
+    - CLOUDSDK_CONTAINER_CLUSTER=seen-it
+  args:
+    - apply
+    - -f
+    - kubernetes-manifests.yaml
