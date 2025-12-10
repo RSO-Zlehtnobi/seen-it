@@ -92,6 +92,7 @@ spec:
       containers:
         - name: server
           image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/user-service:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3001
@@ -209,6 +210,7 @@ spec:
       containers:
         - name: server
           image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/movie-service:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3002
@@ -331,6 +333,7 @@ spec:
       containers:
         - name: server
           image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/letterboxd-service:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3003
