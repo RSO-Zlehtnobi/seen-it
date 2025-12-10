@@ -1,3 +1,5 @@
+logging: CLOUD_LOGGING_ONLY
+
 steps:
 # Build user-service
 - name: gcr.io/cloud-builders/docker
