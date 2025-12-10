@@ -40,6 +40,8 @@ spec:
       labels:
         app: user-db
     spec:
+      nodeSelector:
+        role: default
       containers:
         - name: mongo
           image: mongo:6
@@ -57,7 +59,7 @@ spec:
               memory: 512Mi
       volumes:
         - name: user-db-data
-          emptyDir: {}   # for dev – replace with PVC in prod
+          emptyDir: {}
 
 # ============================
 # USER SERVICE
@@ -84,6 +86,8 @@ spec:
         app: user-service
     spec:
       serviceAccountName: user-service
+      nodeSelector:
+        role: default
       securityContext:
         fsGroup: 1000
         runAsGroup: 1000
@@ -116,7 +120,7 @@ metadata:
   labels:
     app: user-service
 spec:
-  type: LoadBalancer   # public API
+  type: LoadBalancer
   selector:
     app: user-service
   ports:
@@ -125,7 +129,7 @@ spec:
       targetPort: 3001
 
 # ============================
-# MOVIE DATABASE (MongoDB)
+# MOVIE DATABASE
 # ============================
 ---
 apiVersion: v1
@@ -158,6 +162,8 @@ spec:
       labels:
         app: movie-db
     spec:
+      nodeSelector:
+        role: default
       containers:
         - name: mongo
           image: mongo:6
@@ -175,7 +181,7 @@ spec:
               memory: 512Mi
       volumes:
         - name: movie-db-data
-          emptyDir: {}   # dev only – swap for PVC in prod
+          emptyDir: {}
 
 # ============================
 # MOVIE SERVICE
@@ -202,6 +208,8 @@ spec:
         app: movie-service
     spec:
       serviceAccountName: movie-service
+      nodeSelector:
+        role: default
       securityContext:
         fsGroup: 1000
         runAsGroup: 1000
@@ -239,7 +247,7 @@ metadata:
   labels:
     app: movie-service
 spec:
-  type: LoadBalancer   # public API
+  type: LoadBalancer
   selector:
     app: movie-service
   ports:
@@ -248,7 +256,7 @@ spec:
       targetPort: 3002
 
 # ============================
-# LETTERBOXD DATABASE (MongoDB)
+# LETTERBOXD DATABASE
 # ============================
 ---
 apiVersion: v1
@@ -281,6 +289,8 @@ spec:
       labels:
         app: letterboxd-db
     spec:
+      nodeSelector:
+        role: default
       containers:
         - name: mongo
           image: mongo:6
@@ -298,10 +308,10 @@ spec:
               memory: 512Mi
       volumes:
         - name: letterboxd-db-data
-          emptyDir: {}   # dev only – swap for PVC in prod
+          emptyDir: {}
 
 # ============================
-# LETTERBOXD SERVICE
+# LETTERBOXD SERVICE (SCRAPER)
 # ============================
 ---
 apiVersion: v1
@@ -325,11 +335,17 @@ spec:
         app: letterboxd-service
     spec:
       serviceAccountName: letterboxd-service
+
+      # ⚡ THIS RUNS THE SCRAPER ON THE HIGH-CPU NODE POOL
+      nodeSelector:
+        role: scraper
+
       securityContext:
         fsGroup: 1000
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
+
       containers:
         - name: server
           image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/letterboxd-service:latest
@@ -357,7 +373,7 @@ metadata:
   labels:
     app: letterboxd-service
 spec:
-  type: LoadBalancer   # public API
+  type: LoadBalancer
   selector:
     app: letterboxd-service
   ports:
