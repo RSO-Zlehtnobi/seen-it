@@ -39,7 +39,7 @@ steps:
 - name: gcr.io/cloud-builders/kubectl
   env:
     - CLOUDSDK_COMPUTE_REGION=europe-west3
-    - CLOUDSDK_CONTAINER_CLUSTER=seen-it
+    - CLOUDSDK_CONTAINER_CLUSTER=seen-it-cluster
   args:
     - apply
     - -f
