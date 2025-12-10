@@ -91,7 +91,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: server
-          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/user-service:latest
+          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/user-service
           ports:
             - name: http
               containerPort: 3001
@@ -208,7 +208,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: server
-          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/movie-service:latest
+          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/movie-service
           ports:
             - name: http
               containerPort: 3002
@@ -330,7 +330,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: server
-          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/letterboxd-service:latest
+          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/letterboxd-service
           ports:
             - name: http
               containerPort: 3003
