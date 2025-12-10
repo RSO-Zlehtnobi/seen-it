@@ -91,7 +91,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: server
-          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/user-service
+          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/user-service:latest
           ports:
             - name: http
               containerPort: 3001
@@ -208,7 +208,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: server
-          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/movie-service
+          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/movie-service:latest
           ports:
             - name: http
               containerPort: 3002
@@ -217,11 +217,11 @@ spec:
               value: "3002"
             - name: MONGO_URI
               value: "mongodb://movie-db:27017/movies"
-            - name: TMDB_API_KEY
+            - name: tmdb-api-key
               valueFrom:
                 secretKeyRef:
                   name: tmdb-api-key
-                  key: TMDB_API_KEY
+                  key: tmdb-api-key
           resources:
             requests:
               cpu: 150m
@@ -330,7 +330,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: server
-          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/letterboxd-service
+          image: europe-west3-docker.pkg.dev/seenit-480720/seen-it/letterboxd-service:latest
           ports:
             - name: http
               containerPort: 3003
